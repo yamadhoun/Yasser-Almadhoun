@@ -3,6 +3,7 @@
 % clear all;clc;
 addpath(genpath('Shorelines_20221117\'))
 addpath(genpath('..\functions\'))
+addpath(genpath('..\test1\'))
 figure (11);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -23,8 +24,8 @@ S.x_cliff             = [50 50];
 S.y_cliff             = [0 1000];
 S.xlimits             = [0 100];                                                         % x-limits of plot area
 S.ylimits             = [0 1000];                                                        % y-limits of plot area
-S.phiw0               = 330;                                                             % deep water wave angle [°N]
-S.spread              = 90;                                                              % wave spreading [°] (wave_dir from range:  S.phiw0 +/- 0.5*S.spread)
+S.phiw0               = 330;                                                             % deep water wave angle [Â°N]
+S.spread              = 90;                                                              % wave spreading [Â°] (wave_dir from range:  S.phiw0 +/- 0.5*S.spread)
 S.d                   = 10;                                                              % Active profile height [m]
 S.ddeep               = 25;                                                              % Offshore water depth for refraction
 S.dnearshore          = 12;                                                              % Nearshore water depth for refraction
