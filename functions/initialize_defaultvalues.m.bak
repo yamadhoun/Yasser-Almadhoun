@@ -1,0 +1,224 @@
+function [S]=initialize_defaultvalues(S0)
+% function [S]=initialize_defaultvalues(S0)
+%
+% INPUT
+%    S       Default settings of the ShorelineS model (as specified in this function)
+%    S0      User input given to the ShorelineS model
+%
+% OUTPUT
+%    S       Combined settings with defaults replaced by user settings
+%
+%
+%% Copyright notice
+%   --------------------------------------------------------------------
+%   Copyright (C) 2020 IHE Delft & Deltares
+%
+%       Dano Roelvink, Ahmed Elghandour
+%       d.roelvink@un-ihe.org
+%       Westvest 7
+%       2611AX Delft
+%
+%       Bas Huisman
+%       bas.huisman@deltares.nl
+%       Boussinesqweg 1
+%       2629HV Delft
+%
+%   This library is free software: you can redistribute it and/or
+%   modify it under the terms of the GNU Lesser General Public
+%   License as published by the Free Software Foundation, either
+%   version 2.1 of the License, or (at your option) any later version.
+%
+%   This library is distributed in the hope that it will be useful,
+%   but WITHOUT ANY WARRANTY; without even the implied warranty of
+%   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%   Lesser General Public License for more details.
+%
+%   You should have received a copy of the GNU Lesser General Public
+%   License along with this library. If not, see <http://www.gnu.org/licenses
+%   --------------------------------------------------------------------
+
+    fprintf('%s\n','%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%');
+    fprintf('%s\n','%                  RUN SHORELINES                   %');
+    fprintf('%s\n','%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%');
+    fprintf('%s\n','  Initialize default values');
+
+    if (isoctave)
+        warning('off','all');
+    end
+
+    %% ------------------ simulation wave parameters --------------------------
+    S.Hso=1;                                                                   % wave height [m]
+    S.phiw0=330;                                                               % deep water wave angle in degrees [?N]
+    S.spread=90;                                                               % wave spreading [?] (wave_dir from range:  S.phiw0 +/- 0.5*S.spread)
+    S.WVCfile='';                                                              % wave time-series <-leave empty to use wave parameters ('S.Hso', 'S.phiw0' and 'S.spread')
+    S.Waveclimfile='';                                                         % wave climate file
+    S.Wavematfile='';
+    S.Wavecorr=0;
+    S.ddeep=25;                                                                % Waterdepth the location of wave climate, corresponding with S.Hso [m]
+    S.dnearshore=8;                                                            % Waterdepth at the 'dynamic boundary', corresponding with S.phif [m]
+    S.RWSfiletype=false;
+    S.randomseed=-1;                                                           % Seed to generate randomized series
+    S.interpolationmethod='alongshore_mapping';                                % Method for interpolating wave data of multiple wave stations on the coast (either 'alongshore_mapping' / 'weighted_distance')
+    %% ------------------ simulation coastline definition ---------------------
+    S.LDBcoastline='';                                                         % LDB with initial coastline shape ([Nx2] ASCII FILE WITHOUT HEADER) <- leave empty to use interactive mode!
+    S.phif=[];                                                                 % Orientation of the foreshore [?N] (in degrees) <- only relevant for 'KAMP', 'MILH' or 'VR14'
+    S.d=10;                                                                    % active profile height [m]
+    %% ------------------ simulation transport parameters ---------------------
+    S.trform='CERC';                                                           % switch for transport formulation (e.g. S.trform='CERC', 'KAMP', 'MILH' or 'VR14')
+    S.b=1e6;                                                                   % CERC : coeff in simple cerc formula
+    S.qscal=1;                                                                 % Calibration factor of the transport (works for all transport formulas)
+    S.tper=6;                                                                  % KAMP & MILH : peak wave period [s]
+    S.d50=2.0e-4;                                                              % KAMP & MILH & VR14 : median grain diameter [m]
+    S.porosity=0.4;                                                            % KAMP & MILH & VR14 : S.porosity (typically 0.4) [-]
+    S.tanbeta=0.03;                                                            % KAMP & MILH & VR14 : mean bed slope [ratio 1/slope]
+    S.rhos=2650;                                                               % KAMP & MILH & VR14 : density of sand [kg/m3]
+    S.rhow=1025;                                                               % KAMP & MILH & VR14 : density of water [kg/m3]
+    S.g=9.81;                                                                  % KAMP & MILH & VR14 : gravitational acceleration [m2/s]
+    S.alpha=1.8;                                                               % KAMP & MILH & VR14 : calibration factor for point of breaking (S.alpha = 1.8 for Egmond data)
+    S.gamma=0.72;                                                              % KAMP & MILH & VR14 : breaking coefficient (Hs/h) with 5% breaking waves
+    S.Pswell=20;                                                               % VR14 : Percentage swell (between 0 - 100) [-]
+    S.crit=.9;                                                                 % stability criterion (not active)
+    S.Aw=5;                                                                    % factor rep. Hs/actual Hs for determining depth of closure at bypassing groyne (1.27 if time series is used, higher for a representative Hs)
+    %% ------------------ simulation time steps & numerical--------------------
+    S.tc=1;                                                                    % switch for using adaptive time step
+    S.dt=0;                                                                    % Set fixed timestep. When adt is used, control the aggregation of time series of wave bc
+    S.ds0=100;                                                                 % initial space step [m]
+    S.reftime='2020-01-01';                                                    % Reference time (i.e. 'yyyy-mm-dd') <- leave empty to use t=0
+    S.endofsimulation='2040-01-01';
+    S.twopoints=1;                                                             % switch for 'S.twopoints approach'
+    S.smoothfac=0;
+    %% -------------------------- boundary condition -------------------------- for (non cyclic) sections (ex.straight shoreline) ,If more than one (non cyclic)sections should adjusted manually
+    S.boundary_condition_start='neumann';                                        % boundary condition 'CTAN', 'constant', 'neumann', 'func', 'closed', 'periodic'
+    S.boundary_condition_end='neumann';
+    S.BCfile='';                                                                 % Boundary condition function in time (file) , columns (time , QS_start, Qs_end)
+    S.QS_start='';                                                               %[m3/year]
+    S.QS_end='';
+    %% ------------------------ climate change impact -------------------------
+    S.ccSLR=[];                                                                % climate impacted rise in sea level (SLR) [Nx2] with 'time in datenum format' and 'sea level with respect to initial situation' (rates per year are computed automatically) % S.tanbeta is used as 'slope angle'.
+    S.ccDIR=[];                                                                % climate impacted change in wave direction [Nx2] with 'time in datenum format' and 'relative change in wave direction w.r.t. initial situation' as a # degrees (rates per year are computed automatically)
+    S.ccHS=[];
+    %% ----------------------------- structures -------------------------------
+    S.struct=0;                                                                % switch for using hard structures
+    S.LDBstructures='';                                                        % LDB with hard structures ([Nx2] ASCII FILE WITHOUT HEADER) <- leave empty to use interactive mode!
+    %% ------------------------- permeable structures -------------------------
+    S.perm=0;                                                                  % switch for using hard structures
+    S.LDBperm='';                                                              % LDB with perm structures ([Nx2] ASCII FILE WITHOUT HEADER) <- leave empty to use interactive mode!
+    S.wavetransm=[1];
+    %% --------------------------- wave diffraction ---------------------------
+    S.diffraction=0;                                                           % wave diffraction < use 1 to avtivate
+    S.WD_angle='Roelvink';                                                     % Wave diffraction approach to treat angles (Roelvink(default), Hurst)
+    S.kd='Kamphuis';                                                           % Computation of kd according to Kamphuis or Roelvink analytical approx.
+    S.rotfac=1.5;
+    %% ---------------------------- nourishments ------------------------------
+    S.nourish=0;                                                               % switch (0/1) for nourishments
+    S.growth=1;                                                                % calibration of nourishment growth rate
+    S.LDBnourish='';                                                           % LDB with nourishment locations ([Nx2] ASCII FILE WITHOUT HEADER) (i.e. polygon around relevant grid cells) <- leave empty to use interactive mode!
+    S.nourratefile='';                                                         % nourishment rates placed in order for each nourishment polygons
+    S.nourstartfile='';                                                        % nourishment start dates placed in order for each  nourishment polygons
+    S.nourendfile='';                                                          % nourishment end dates placed in order for each  nourishment polygons
+    S.nourrate=100;
+    S.nourstart=0;
+    S.nourend=[];
+    %% --------------------------- Sources and Sinks --------------------------
+    S.sources_sinks='';
+    S.SSfile='';
+    %% -------------------- aeolian transport to the dunes --------------------
+    S.dune=0;                                                                  % switch for using estimate dune evolution
+    S.LDBdune='';                                                              % LDB with initial Dune foot shape ([Nx2] ASCII FILE WITHOUT HEADER) <- leave empty to use interactive mode!
+    S.dn=0;                                                                    % Dune Height ( measured from dune foot to dune crest)
+    S.Dfelevation='';                                                          % Dune foot elevation file <-leave empty to use one value S.Dfelv along the dune system
+    S.Dfelev=0;                                                                % Dune foot elevation to MSL
+    S.WndCfile='';                                                             % wind time-series <-leave empty to use wave parameters ('S.uz', 'S.phiwnd0' and 'S.spread')
+    S.Windclimfile='';
+    S.uz='';                                                                   % wind velocity at z (m)
+    S.z=10;                                                                    % elevation of measured wind data
+    S.phiwnd0=330;                                                             % wind angle [degN]
+    S.Watfile='';                                                              % Water levels time series relative to MSL
+    S.Watclimfile='';
+    S.SWL0=0;                                                                  % Fixed still water level relative to MSL
+    %% ------------------- physics of spit width and channel ------------------
+    S.spit_width=50;                                                           % width of tip of spit (used for overwash)
+    S.spit_headwidth=200;                                                      % width of tip of spit (used for upwind correction)
+    S.OWscale=0.1;                                                             % scales the rate of the overwash per timestep (i.e. what part of the deficit is moved to the backbarrier)
+    S.Dsf=S.d*0.8;                                                             % underwater part of active height for shoreface -> used only in spit-width function
+    S.Dbb=1*S.Dsf;                                                             % underwater part of active height for back-barrier -> used only in spit-width function
+    S.Bheight=2;                                                               % berm height used for overwash funciton (i.e. added to Dsf or Dbb)
+    S.tide_interaction=false;
+    S.wave_interaction=false;
+    S.wavefile='';                                                             % wave table (.mat)
+    S.surf_width_w=250;                                                        % width of surf zone, where to collect the wave conditions from wave table
+    S.surf_width=1000;                                                         % width of surf zone, where to update the bathymetry
+    S.bathy_update='';                                                         % the dates when the bathymetry should be updated, the input should be in dates form, can accept more than one  {'yyyy-mm-dd'};
+    %% ---------------------------------- channel ------------------------------
+    S.channel=0;                                                               % switch (0/1)for migrating inlet on
+    S.channel_width=550;                                                       % target channel width
+    S.channel_fac=0.08;                                                        % adaptation factor
+    S.channel_disch_rate=0;                                                    % adaptation factor
+    S.channel_disch_R=300;                                                     % adaptation factor
+    S.LDBchannel=[];                                                           % initial channel axis
+    S.flood_delta=0;                                                           % switch (0/1) for flood delta losses
+    S.LDBflood=[];                                                             % wide outline of potential flood delta deposits
+    S.x_flood_pol=[];
+    S.y_flood_pol=[];
+    S.dxf=50;                                                                  % resolution of flood delta area
+    S.overdepth=2;                                                             % initial overdepth flood delta
+    S.R_ero=300;                                                               % radius of flood delta influence on coast
+    S.R_depo=600;                                                              % radius of inlet influence on flood delta
+    S.Tscale=1;                                                                % timescale of flood delta filling
+    S.xr_mc='';
+    S.yr_mc='';
+    %% ------------------------- formatting / output --------------------------
+    S.plotvisible=1;                                                           % plot and update figure with wave conditions and modeled shoreline during run
+    S.xlimits=[];                                                              % X limits of plot [m] [1x2] <- leave empty to automatically do this
+    S.ylimits=[];                                                              % Y limits of plot [m] [1x2] <- leave empty to automatically do this
+    S.XYwave =[];                                                              % X,Y location and scale of wave arrow [m] [1x2] (automatically determined on the basis of xy-limits and wave angle
+    S.XYoffset=[0,0];                                                          % shift in X,Y locaton for plotting <- leave empty to automatically shift grid <- use [0,0] for no shift
+    S.pauselength=[];                                                          % pause between subsequent timesteps (e.g. 0.0001) <- leave empty to not pause plot
+    S.outputdir='Output\';                                                     % output directory
+    S.rundir='Delft3D\def_model\';
+    S.LDBplot = {};                                                            % cell array with at every line : string with LDB-filename, string with legend entry, string with plot format (e.g. 'b--') <- e.g. {'abc.ldb','line 1','k--'; 'def.ldb','line 2','r-.'; etc} <- leave empty to not use additional plots
+    S.plotQS = 0;                                                              % plot transport rates as coloured markers along the coast
+    S.llocation='SouthWest';                                                   % location of legend. Shortened for Octave compatibility
+    S.usefill = 1;                                                             % switch that can be used to only plot lines instead of the fill
+    S.fignryear=12;
+    S.plotinterval=1;
+    S.fastplot=1;                                                              % Use imwrite plotter, that is ~2x as fast as print
+    S.storageinterval=50;                                                      % Time interval of storage of output file ('output.mat'; [day])
+    S.ld=3000;                                                                 % Width of the land fill behind the shoreline [m]
+    %% -------------------------- Extract shorelines --------------------------
+    S.SLplot={};
+    S.extract_x_y=0;                                                           % get file with shorelines coordinates x,y
+    S.print_fig=0;
+    %% ---------------- Extract shoreline & dune foot locations ---------------
+    S.yesplot=0;
+    S.bermw_plot=0;                                                            % For extracting  against certain times for a certain transect(s).
+    S.bermw_plot_int=[];                                                       % beach berm width plot interval [Months]
+    S.qplot=0;                                                                 % to plot wave and wind transport at each time step for a certain transect(s).
+    S.transect='';                                                             % file indictes x-y transects to be plotted
+    S.CLplot=0;                                                                % to track coastline location relative to the initial coasltime against certain time interval for a certain transect(s).
+    S.CLplot_int=[];                                                           % coastline change plot interval a certain transect(s) [Months] .
+    S.extract_berm_Plot=0;                                                     % to allow data extraction for berm width plotting
+    %% video
+    S.video=0;
+    %% debug
+    S.debug=0;
+    %% ------------------ Data Assimilation--------------------
+    S.DA=0;                                                                    % Data assimilation Switch
+    S.BS=0;
+
+    %% To handle Octave runs with incompatible mex function, set global handle to compatible intersection function
+global intersectfn
+
+    %% SUBSITUTE MODEL INPUT IN THE S STRUCTURE, AND USE DEFAULTS IF NO VALUE IS SPECIFIED
+    if (isoctave)
+       fieldnms=fieldnames(S0);
+%        intersectfn=@get_intersections;
+       intersectfn=@findcrossing;
+    else
+       fieldnms=fields(S0);
+      intersectfn=@mexinterx;
+    end
+    for ii=1:length(fieldnms)
+        S.(fieldnms{ii}) = S0.(fieldnms{ii});
+    end
+end
