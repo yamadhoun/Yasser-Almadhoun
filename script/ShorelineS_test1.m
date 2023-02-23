@@ -1,7 +1,7 @@
 % global S
 % close all;
 % clear all;clc;
-addpath(genpath('Shorelines_20221117\'))
+% addpath(genpath('Shorelines_20221117\'))
 addpath(genpath('..\functions\'))
 addpath(genpath('..\test1\'))
 figure (11);
