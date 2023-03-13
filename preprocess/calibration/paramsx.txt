@@ -1,0 +1,23 @@
+
+rho        = 1020           
+g          = 9.81 
+d          = 10.0
+
+gamma      = 0.780         
+Beta       = 0.025          
+alpha      = 0.100          
+theta      = 135
+
+Ej         = 3.50          
+Hc         = 25.0         
+sigma      = 1.00                
+Bc         = 0.10          
+fc         = 0.65     
+
+form       = 4
+Kc         = .74
+Xdecay     = 0.070    
+
+
+
+
