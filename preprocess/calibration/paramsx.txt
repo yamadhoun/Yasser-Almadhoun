@@ -14,8 +14,8 @@ sigma      = 1.00
 Bc         = 0.10          
 fc         = 0.65     
 
-form       = 4
-Kc         = .74
+form       = 2
+Kc         = 0.188
 Xdecay     = 0.070    
 
 
